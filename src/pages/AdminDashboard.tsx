@@ -51,10 +51,10 @@ const AdminDashboard = () => {
   }, [user, userRole]);
 
   const fetchData = async () => {
-    // Fetch companies with profile data
+    // Fetch companies (no FK to profiles, so fetch separately)
     const { data: companiesData } = await supabase
       .from('companies')
-      .select('*, profiles(email, full_name)')
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (companiesData) {
