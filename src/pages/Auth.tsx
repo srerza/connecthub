@@ -271,9 +271,9 @@ const Auth = () => {
             <div className="mt-6 pt-4 border-t border-border text-center">
               <Link 
                 to="/admin-login" 
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline transition-colors"
               >
-                Admin Login →
+                🔐 Admin Login
               </Link>
             </div>
           </CardContent>
