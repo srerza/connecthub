@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { FeaturedSection } from '@/components/FeaturedSection';
 import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star } from 'lucide-react';
 
 const Index = () => {
@@ -140,6 +141,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Featured Products & Jobs */}
+      <FeaturedSection />
 
       {/* CTA Section */}
       <section className="py-24 px-4">

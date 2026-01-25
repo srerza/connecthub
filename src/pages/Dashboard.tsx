@@ -8,12 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { MediaUpload } from '@/components/MediaUpload';
+import { InquiriesPanel } from '@/components/InquiriesPanel';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon
 } from 'lucide-react';
 
 interface Company {
@@ -23,12 +26,25 @@ interface Company {
   status: string;
 }
 
+interface ProductMedia {
+  id: string;
+  media_url: string;
+  media_type: 'image' | 'video';
+}
+
 interface Product {
   id: string;
   name: string;
   description: string | null;
   price: number | null;
   category: string | null;
+  product_media?: ProductMedia[];
+}
+
+interface JobMedia {
+  id: string;
+  media_url: string;
+  media_type: 'image' | 'video';
 }
 
 interface Job {
@@ -38,6 +54,7 @@ interface Job {
   location: string | null;
   job_type: string | null;
   salary_range: string | null;
+  job_media?: JobMedia[];
 }
 
 const Dashboard = () => {
@@ -51,6 +68,8 @@ const Dashboard = () => {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isJobDialogOpen, setIsJobDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [productMedia, setProductMedia] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [jobMedia, setJobMedia] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   
   const [newProduct, setNewProduct] = useState({
     name: '', description: '', price: '', category: ''
@@ -83,23 +102,23 @@ const Dashboard = () => {
     if (companyData) {
       setCompany(companyData);
       
-      // Fetch products
+      // Fetch products with media
       const { data: productsData } = await supabase
         .from('products')
-        .select('*')
+        .select('*, product_media(*)')
         .eq('company_id', companyData.id)
         .order('created_at', { ascending: false });
       
-      if (productsData) setProducts(productsData);
+      if (productsData) setProducts(productsData as unknown as Product[]);
       
-      // Fetch jobs
+      // Fetch jobs with media
       const { data: jobsData } = await supabase
         .from('jobs')
-        .select('*')
+        .select('*, job_media(*)')
         .eq('company_id', companyData.id)
         .order('created_at', { ascending: false });
       
-      if (jobsData) setJobs(jobsData);
+      if (jobsData) setJobs(jobsData as unknown as Job[]);
     }
   };
 
@@ -109,13 +128,13 @@ const Dashboard = () => {
     
     setIsSubmitting(true);
     
-    const { error } = await supabase.from('products').insert({
+    const { data: productData, error } = await supabase.from('products').insert({
       company_id: company.id,
       name: newProduct.name,
       description: newProduct.description,
       price: newProduct.price ? parseFloat(newProduct.price) : null,
       category: newProduct.category,
-    });
+    }).select().single();
     
     if (error) {
       toast({
@@ -124,8 +143,19 @@ const Dashboard = () => {
         variant: 'destructive',
       });
     } else {
+      // Add media files
+      if (productMedia.length > 0 && productData) {
+        const mediaInserts = productMedia.map(media => ({
+          product_id: productData.id,
+          media_url: media.url,
+          media_type: media.type,
+        }));
+        await supabase.from('product_media').insert(mediaInserts);
+      }
+      
       toast({ title: 'Product added successfully!' });
       setNewProduct({ name: '', description: '', price: '', category: '' });
+      setProductMedia([]);
       setIsProductDialogOpen(false);
       fetchCompanyData();
     }
@@ -139,7 +169,7 @@ const Dashboard = () => {
     
     setIsSubmitting(true);
     
-    const { error } = await supabase.from('jobs').insert({
+    const { data: jobData, error } = await supabase.from('jobs').insert({
       company_id: company.id,
       title: newJob.title,
       description: newJob.description,
@@ -147,7 +177,7 @@ const Dashboard = () => {
       job_type: newJob.job_type as 'full-time' | 'part-time' | 'contract' | 'remote',
       salary_range: newJob.salary_range,
       requirements: newJob.requirements,
-    });
+    }).select().single();
     
     if (error) {
       toast({
@@ -156,8 +186,19 @@ const Dashboard = () => {
         variant: 'destructive',
       });
     } else {
+      // Add media files
+      if (jobMedia.length > 0 && jobData) {
+        const mediaInserts = jobMedia.map(media => ({
+          job_id: jobData.id,
+          media_url: media.url,
+          media_type: media.type,
+        }));
+        await supabase.from('job_media').insert(mediaInserts);
+      }
+      
       toast({ title: 'Job posted successfully!' });
       setNewJob({ title: '', description: '', location: '', job_type: 'full-time', salary_range: '', requirements: '' });
+      setJobMedia([]);
       setIsJobDialogOpen(false);
       fetchCompanyData();
     }
@@ -280,6 +321,19 @@ const Dashboard = () => {
             </Card>
 
             {company.status === 'approved' && (
+              <Tabs defaultValue="listings" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="listings" className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    Products & Jobs
+                  </TabsTrigger>
+                  <TabsTrigger value="inquiries" className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Inquiries
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="listings">
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Products Section */}
                 <Card>
@@ -337,6 +391,15 @@ const Dashboard = () => {
                                 onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                               />
                             </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Photos & Videos</Label>
+                            <MediaUpload
+                              bucket="product-media"
+                              existingMedia={productMedia}
+                              onUpload={(url, type) => setProductMedia([...productMedia, { url, type }])}
+                              onRemove={(url) => setProductMedia(productMedia.filter(m => m.url !== url))}
+                            />
                           </div>
                           <Button type="submit" className="w-full" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -445,6 +508,15 @@ const Dashboard = () => {
                               onChange={(e) => setNewJob({ ...newJob, salary_range: e.target.value })}
                             />
                           </div>
+                          <div className="space-y-2">
+                            <Label>Photos & Videos</Label>
+                            <MediaUpload
+                              bucket="job-media"
+                              existingMedia={jobMedia}
+                              onUpload={(url, type) => setJobMedia([...jobMedia, { url, type }])}
+                              onRemove={(url) => setJobMedia(jobMedia.filter(m => m.url !== url))}
+                            />
+                          </div>
                           <Button type="submit" className="w-full" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Post Job
@@ -477,6 +549,12 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               </div>
+                </TabsContent>
+                
+                <TabsContent value="inquiries">
+                  <InquiriesPanel companyId={company.id} />
+                </TabsContent>
+              </Tabs>
             )}
           </>
         )}
