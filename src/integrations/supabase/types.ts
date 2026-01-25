@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          inquiry_id: string
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inquiry_id: string
+          message: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inquiry_id?: string
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string | null
@@ -50,12 +82,103 @@ export type Database = {
         }
         Relationships: []
       }
+      inquiries: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          job_id: string | null
+          message: string | null
+          product_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          message?: string | null
+          product_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          message?: string | null
+          product_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_media: {
+        Row: {
+          created_at: string | null
+          id: string
+          job_id: string
+          media_type: string
+          media_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          job_id: string
+          media_type: string
+          media_url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          media_type?: string
+          media_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_media_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           company_id: string
           created_at: string | null
           description: string | null
           id: string
+          is_featured: boolean | null
           job_type: string | null
           location: string | null
           requirements: string | null
@@ -68,6 +191,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_featured?: boolean | null
           job_type?: string | null
           location?: string | null
           requirements?: string | null
@@ -80,6 +204,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_featured?: boolean | null
           job_type?: string | null
           location?: string | null
           requirements?: string | null
@@ -97,6 +222,38 @@ export type Database = {
           },
         ]
       }
+      product_media: {
+        Row: {
+          created_at: string | null
+          id: string
+          media_type: string
+          media_url: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          media_type: string
+          media_url: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
@@ -105,6 +262,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_featured: boolean | null
           name: string
           price: number | null
           updated_at: string | null
@@ -116,6 +274,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           name: string
           price?: number | null
           updated_at?: string | null
@@ -127,6 +286,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           name?: string
           price?: number | null
           updated_at?: string | null
