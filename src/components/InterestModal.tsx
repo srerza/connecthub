@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, MessageCircle, UserPlus } from 'lucide-react';
+import { Loader2, MessageCircle, UserPlus, CheckCircle2, LayoutDashboard } from 'lucide-react';
 
 interface InterestModalProps {
   open: boolean;
@@ -39,6 +39,7 @@ export const InterestModal = ({
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -67,11 +68,7 @@ export const InterestModal = ({
         variant: 'destructive',
       });
     } else {
-      toast({
-        title: 'Interest sent!',
-        description: `${companyName} has been notified of your interest.`,
-      });
-      onOpenChange(false);
+      setSubmitted(true);
       setMessage('');
     }
 
@@ -129,6 +126,53 @@ export const InterestModal = ({
                 Sign in
               </button>
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Success state
+  if (submitted) {
+    return (
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setSubmitted(false);
+        }
+        onOpenChange(isOpen);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-success">
+              <CheckCircle2 className="w-5 h-5" />
+              Interest Sent!
+            </DialogTitle>
+            <DialogDescription>
+              {companyName} has been notified of your interest in {itemName}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+              <p className="text-sm">
+                You can track your inquiry and chat with the company from your dashboard.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => {
+                setSubmitted(false);
+                onOpenChange(false);
+              }}>
+                Continue Browsing
+              </Button>
+              <Button variant="hero" className="flex-1" asChild>
+                <Link to="/my-dashboard">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  My Dashboard
+                </Link>
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
