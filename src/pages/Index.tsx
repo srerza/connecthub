@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FeaturedSection } from '@/components/FeaturedSection';
-import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star, LayoutDashboard } from 'lucide-react';
 
 const Index = () => {
+  const { user, userRole, loading } = useAuth();
   const features = [
     {
       icon: Building2,
@@ -53,12 +55,41 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/auth">Sign In</Link>
-            </Button>
-            <Button variant="hero" asChild>
-              <Link to="/auth?mode=register">Get Started</Link>
-            </Button>
+            {!loading && user ? (
+              <>
+                {userRole === 'superadmin' ? (
+                  <Button variant="hero" asChild>
+                    <Link to="/admin">
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Admin Dashboard
+                    </Link>
+                  </Button>
+                ) : userRole === 'company' ? (
+                  <Button variant="hero" asChild>
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Company Dashboard
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="hero" asChild>
+                    <Link to="/my-dashboard">
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      My Dashboard
+                    </Link>
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button variant="hero" asChild>
+                  <Link to="/auth?mode=register">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>

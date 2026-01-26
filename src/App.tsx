@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Dashboard from "./pages/Dashboard";
+import UserDashboard from "./pages/UserDashboard";
 import Jobs from "./pages/Jobs";
 import Products from "./pages/Products";
 import Companies from "./pages/Companies";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/my-dashboard" element={<UserDashboard />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/products" element={<Products />} />
             <Route path="/companies" element={<Companies />} />

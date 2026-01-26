@@ -55,7 +55,23 @@ export const InquiriesPanel = ({ companyId }: InquiriesPanelProps) => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'inquiries',
+          filter: `company_id=eq.${companyId}`,
+        },
+        (payload) => {
+          toast({
+            title: 'New Inquiry!',
+            description: 'Someone just expressed interest in your listing.',
+          });
+          fetchInquiries();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'inquiries',
           filter: `company_id=eq.${companyId}`,

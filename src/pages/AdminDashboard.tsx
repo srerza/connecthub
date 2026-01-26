@@ -1,41 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { CompaniesTab } from '@/components/admin/CompaniesTab';
+import { UsersTab } from '@/components/admin/UsersTab';
+import { ProductsTab } from '@/components/admin/ProductsTab';
+import { JobsTab } from '@/components/admin/JobsTab';
+import { InquiriesTab } from '@/components/admin/InquiriesTab';
 import { 
   Shield, Building2, Users, Briefcase, ShoppingBag, 
-  CheckCircle2, XCircle, Clock, LogOut, Home 
+  CheckCircle2, Clock, LogOut, Home, MessageCircle
 } from 'lucide-react';
-
-interface Company {
-  id: string;
-  name: string;
-  description: string | null;
-  status: string;
-  created_at: string;
-  user_id: string;
-  profiles?: {
-    email: string;
-    full_name: string | null;
-  };
-}
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { user, userRole, signOut, loading } = useAuth();
   
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [stats, setStats] = useState({
     totalCompanies: 0,
     pendingCompanies: 0,
     approvedCompanies: 0,
     totalJobs: 0,
     totalProducts: 0,
+    totalUsers: 0,
+    totalInquiries: 0,
   });
 
   useEffect(() => {
@@ -46,65 +37,30 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (user && userRole === 'superadmin') {
-      fetchData();
+      fetchStats();
     }
   }, [user, userRole]);
 
-  const fetchData = async () => {
-    // Fetch companies (no FK to profiles, so fetch separately)
-    const { data: companiesData } = await supabase
-      .from('companies')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (companiesData) {
-      setCompanies(companiesData as Company[]);
-      
-      setStats({
-        totalCompanies: companiesData.length,
-        pendingCompanies: companiesData.filter(c => c.status === 'pending').length,
-        approvedCompanies: companiesData.filter(c => c.status === 'approved').length,
-        totalJobs: 0,
-        totalProducts: 0,
-      });
-    }
+  const fetchStats = async () => {
+    const [companiesResult, jobsResult, productsResult, usersResult, inquiriesResult] = await Promise.all([
+      supabase.from('companies').select('status'),
+      supabase.from('jobs').select('*', { count: 'exact', head: true }),
+      supabase.from('products').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('inquiries').select('*', { count: 'exact', head: true }),
+    ]);
 
-    // Fetch jobs count
-    const { count: jobsCount } = await supabase
-      .from('jobs')
-      .select('*', { count: 'exact', head: true });
+    const companies = companiesResult.data || [];
     
-    // Fetch products count
-    const { count: productsCount } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
-    
-    setStats(prev => ({
-      ...prev,
-      totalJobs: jobsCount || 0,
-      totalProducts: productsCount || 0,
-    }));
-  };
-
-  const updateCompanyStatus = async (companyId: string, status: string) => {
-    const { error } = await supabase
-      .from('companies')
-      .update({ status })
-      .eq('id', companyId);
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update company status.',
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: `Company ${status === 'approved' ? 'approved' : 'rejected'} successfully.`,
-      });
-      fetchData();
-    }
+    setStats({
+      totalCompanies: companies.length,
+      pendingCompanies: companies.filter(c => c.status === 'pending').length,
+      approvedCompanies: companies.filter(c => c.status === 'approved').length,
+      totalJobs: jobsResult.count || 0,
+      totalProducts: productsResult.count || 0,
+      totalUsers: usersResult.count || 0,
+      totalInquiries: inquiriesResult.count || 0,
+    });
   };
 
   const handleSignOut = async () => {
@@ -152,7 +108,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -161,7 +117,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.totalCompanies}</p>
-                  <p className="text-xs text-muted-foreground">Total Companies</p>
+                  <p className="text-xs text-muted-foreground">Companies</p>
                 </div>
               </div>
             </CardContent>
@@ -222,73 +178,81 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-xs text-muted-foreground">Users</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.totalInquiries}</p>
+                  <p className="text-xs text-muted-foreground">Inquiries</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Companies List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display">Company Applications</CardTitle>
-            <CardDescription>Review and manage company registrations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {companies.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No company applications yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {companies.map((company) => (
-                  <div
-                    key={company.id}
-                    className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-lg border border-border bg-secondary/30 gap-4"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{company.name}</h3>
-                        <Badge
-                          variant={
-                            company.status === 'approved' ? 'default' :
-                            company.status === 'rejected' ? 'destructive' : 'secondary'
-                          }
-                        >
-                          {company.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {company.description || 'No description provided'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Registered: {new Date(company.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    {company.status === 'pending' && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="success"
-                          onClick={() => updateCompanyStatus(company.id, 'approved')}
-                        >
-                          <CheckCircle2 className="w-4 h-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => updateCompanyStatus(company.id, 'rejected')}
-                        >
-                          <XCircle className="w-4 h-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tabs */}
+        <Tabs defaultValue="companies" className="space-y-6">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="companies" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Companies
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="jobs" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              Jobs
+            </TabsTrigger>
+            <TabsTrigger value="inquiries" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Inquiries
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="companies">
+            <CompaniesTab />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UsersTab />
+          </TabsContent>
+
+          <TabsContent value="products">
+            <ProductsTab />
+          </TabsContent>
+
+          <TabsContent value="jobs">
+            <JobsTab />
+          </TabsContent>
+
+          <TabsContent value="inquiries">
+            <InquiriesTab />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
