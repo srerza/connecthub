@@ -11,9 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatWindow } from '@/components/ChatWindow';
+import { BrowseListings } from '@/components/BrowseListings';
 import { 
   User, MessageCircle, ShoppingBag, Briefcase, 
-  Clock, CheckCircle2, LogOut, Home, Loader2
+  Clock, CheckCircle2, LogOut, Home, Loader2, Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -239,8 +240,12 @@ const UserDashboard = () => {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="inquiries" className="space-y-6">
+        <Tabs defaultValue="browse" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="browse" className="flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Browse
+            </TabsTrigger>
             <TabsTrigger value="inquiries" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               My Inquiries
@@ -253,6 +258,10 @@ const UserDashboard = () => {
               Profile
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="browse">
+            <BrowseListings />
+          </TabsContent>
 
           <TabsContent value="inquiries">
             <div className="grid lg:grid-cols-2 gap-6">

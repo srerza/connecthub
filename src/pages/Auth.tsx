@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, ArrowLeft, Loader2 } from 'lucide-react';
+import { Building2, ArrowLeft, Loader2, User, Users } from 'lucide-react';
 import { z } from 'zod';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,6 +22,7 @@ const signUpSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   companyName: z.string().optional(),
+  accountType: z.enum(['user', 'company']),
 });
 
 const Auth = () => {
@@ -31,14 +33,15 @@ const Auth = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'register' ? 'register' : 'login');
-  const isCompanySignup = searchParams.get('type') === 'company';
+  const typeParam = searchParams.get('type');
   
   const [signInData, setSignInData] = useState({ email: '', password: '' });
   const [signUpData, setSignUpData] = useState({ 
     fullName: '', 
     email: '', 
     password: '', 
-    companyName: '' 
+    companyName: '',
+    accountType: typeParam === 'company' ? 'company' : 'user' as 'user' | 'company'
   });
 
   useEffect(() => {
@@ -106,10 +109,12 @@ const Auth = () => {
           });
         }
       } else {
-        // If company signup, create company record
-        if (isCompanySignup && signUpData.companyName) {
-          const { data: { user: newUser } } = await supabase.auth.getUser();
-          if (newUser) {
+        // Get the newly created user
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        
+        if (newUser) {
+          // Create role based on account type selection
+          if (signUpData.accountType === 'company' && signUpData.companyName) {
             await supabase.from('companies').insert({
               user_id: newUser.id,
               name: signUpData.companyName,
@@ -121,16 +126,28 @@ const Auth = () => {
               user_id: newUser.id,
               role: 'company',
             });
+          } else {
+            // Add user role for regular clients
+            await supabase.from('user_roles').insert({
+              user_id: newUser.id,
+              role: 'user',
+            });
           }
         }
         
         toast({
           title: 'Account created!',
-          description: isCompanySignup 
+          description: signUpData.accountType === 'company' 
             ? 'Your company registration is pending approval.' 
             : 'Welcome to ConnectHub!',
         });
-        navigate('/dashboard');
+        
+        // Redirect based on account type
+        if (signUpData.accountType === 'company') {
+          navigate('/dashboard');
+        } else {
+          navigate('/my-dashboard');
+        }
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -163,12 +180,10 @@ const Auth = () => {
               <Building2 className="w-8 h-8 text-primary-foreground" />
             </div>
             <CardTitle className="font-display text-2xl">
-              {isCompanySignup ? 'Register Your Company' : 'Welcome to ConnectHub'}
+              Welcome to ConnectHub
             </CardTitle>
             <CardDescription>
-              {isCompanySignup 
-                ? 'Create a company account to post products and jobs' 
-                : 'Sign in or create an account to get started'}
+              Sign in or create an account to get started
             </CardDescription>
           </CardHeader>
           
@@ -212,6 +227,49 @@ const Auth = () => {
               
               <TabsContent value="register">
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  {/* Account Type Selection */}
+                  <div className="space-y-3">
+                    <Label>I want to register as:</Label>
+                    <RadioGroup
+                      value={signUpData.accountType}
+                      onValueChange={(value: 'user' | 'company') => 
+                        setSignUpData({ ...signUpData, accountType: value })
+                      }
+                      className="grid grid-cols-2 gap-4"
+                    >
+                      <div className="relative">
+                        <RadioGroupItem
+                          value="user"
+                          id="account-user"
+                          className="sr-only peer"
+                        />
+                        <label
+                          htmlFor="account-user"
+                          className="flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:border-primary/50"
+                        >
+                          <User className="w-8 h-8 text-primary" />
+                          <span className="font-medium">Client</span>
+                          <span className="text-xs text-muted-foreground text-center">Browse & apply</span>
+                        </label>
+                      </div>
+                      <div className="relative">
+                        <RadioGroupItem
+                          value="company"
+                          id="account-company"
+                          className="sr-only peer"
+                        />
+                        <label
+                          htmlFor="account-company"
+                          className="flex flex-col items-center gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:border-primary/50"
+                        >
+                          <Building2 className="w-8 h-8 text-primary" />
+                          <span className="font-medium">Company</span>
+                          <span className="text-xs text-muted-foreground text-center">Post jobs & products</span>
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input
@@ -224,7 +282,7 @@ const Auth = () => {
                     />
                   </div>
                   
-                  {isCompanySignup && (
+                  {signUpData.accountType === 'company' && (
                     <div className="space-y-2">
                       <Label htmlFor="signup-company">Company Name</Label>
                       <Input
@@ -262,7 +320,7 @@ const Auth = () => {
                   </div>
                   <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isCompanySignup ? 'Register Company' : 'Create Account'}
+                    {signUpData.accountType === 'company' ? 'Register Company' : 'Create Account'}
                   </Button>
                 </form>
               </TabsContent>

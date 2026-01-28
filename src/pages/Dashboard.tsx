@@ -16,8 +16,9 @@ import { MediaUpload } from '@/components/MediaUpload';
 import { InquiriesPanel } from '@/components/InquiriesPanel';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2
 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Company {
   id: string;
@@ -204,6 +205,42 @@ const Dashboard = () => {
     }
     
     setIsSubmitting(false);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    // Delete associated media first
+    await supabase.from('product_media').delete().eq('product_id', productId);
+    // Delete the product
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete product.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Product deleted successfully!' });
+      fetchCompanyData();
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    // Delete associated media first
+    await supabase.from('job_media').delete().eq('job_id', jobId);
+    // Delete the job
+    const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete job.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Job deleted successfully!' });
+      fetchCompanyData();
+    }
   };
 
   const handleSignOut = async () => {
@@ -419,15 +456,43 @@ const Dashboard = () => {
                       <div className="space-y-3">
                         {products.map((product) => (
                           <div key={product.id} className="p-3 rounded-lg border border-border bg-secondary/30">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium">{product.name}</h4>
-                              {product.price && (
-                                <span className="font-semibold text-primary">${product.price}</span>
-                              )}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium">{product.name}</h4>
+                                  {product.price && (
+                                    <span className="font-semibold text-primary">${product.price}</span>
+                                  )}
+                                </div>
+                                {product.category && (
+                                  <Badge variant="secondary" className="mt-2">{product.category}</Badge>
+                                )}
+                              </div>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteProduct(product.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
-                            {product.category && (
-                              <Badge variant="secondary" className="mt-2">{product.category}</Badge>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -535,12 +600,40 @@ const Dashboard = () => {
                       <div className="space-y-3">
                         {jobs.map((job) => (
                           <div key={job.id} className="p-3 rounded-lg border border-border bg-secondary/30">
-                            <h4 className="font-medium">{job.title}</h4>
-                            <div className="flex items-center gap-2 mt-2">
-                              {job.job_type && <Badge variant="secondary">{job.job_type}</Badge>}
-                              {job.location && (
-                                <span className="text-xs text-muted-foreground">{job.location}</span>
-                              )}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium">{job.title}</h4>
+                                <div className="flex items-center gap-2 mt-2">
+                                  {job.job_type && <Badge variant="secondary">{job.job_type}</Badge>}
+                                  {job.location && (
+                                    <span className="text-xs text-muted-foreground">{job.location}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Job</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete "{job.title}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteJob(job.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </div>
                         ))}
