@@ -10,9 +10,10 @@ import { UsersTab } from '@/components/admin/UsersTab';
 import { ProductsTab } from '@/components/admin/ProductsTab';
 import { JobsTab } from '@/components/admin/JobsTab';
 import { InquiriesTab } from '@/components/admin/InquiriesTab';
+import { LandingPageTab } from '@/components/admin/LandingPageTab';
 import { 
   Shield, Building2, Users, Briefcase, ShoppingBag, 
-  CheckCircle2, Clock, LogOut, Home, MessageCircle
+  CheckCircle2, Clock, LogOut, Home, MessageCircle, Layout
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -231,6 +232,10 @@ const AdminDashboard = () => {
               <MessageCircle className="w-4 h-4" />
               Inquiries
             </TabsTrigger>
+            <TabsTrigger value="landing" className="flex items-center gap-2">
+              <Layout className="w-4 h-4" />
+              Landing Page
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -251,6 +256,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="inquiries">
             <InquiriesTab />
+          </TabsContent>
+
+          <TabsContent value="landing">
+            <LandingPageTab />
           </TabsContent>
         </Tabs>
       </main>

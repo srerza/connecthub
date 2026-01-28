@@ -1,11 +1,52 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FeaturedSection } from '@/components/FeaturedSection';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star, LayoutDashboard } from 'lucide-react';
+
+interface LandingContent {
+  hero_title: string;
+  hero_subtitle: string;
+  hero_background_url: string;
+  cta_title: string;
+  cta_subtitle: string;
+}
 
 const Index = () => {
   const { user, userRole, loading } = useAuth();
+  const [content, setContent] = useState<LandingContent>({
+    hero_title: 'Connect. Grow. Succeed.',
+    hero_subtitle: 'The ultimate platform connecting companies, job seekers, and customers. Build your network, find opportunities, and grow your business.',
+    hero_background_url: '',
+    cta_title: 'Ready to Grow Your Business?',
+    cta_subtitle: 'Join thousands of companies already using ConnectHub to find talent and reach customers.',
+  });
+
+  useEffect(() => {
+    fetchContent();
+  }, []);
+
+  const fetchContent = async () => {
+    const { data } = await supabase
+      .from('landing_page_content')
+      .select('*');
+
+    if (data) {
+      const contentMap: Record<string, string> = {};
+      data.forEach((item: { key: string; value: string }) => {
+        contentMap[item.key] = item.value;
+      });
+      setContent({
+        hero_title: contentMap['hero_title'] || content.hero_title,
+        hero_subtitle: contentMap['hero_subtitle'] || content.hero_subtitle,
+        hero_background_url: contentMap['hero_background_url'] || '',
+        cta_title: contentMap['cta_title'] || content.cta_title,
+        cta_subtitle: contentMap['cta_subtitle'] || content.cta_subtitle,
+      });
+    }
+  };
   const features = [
     {
       icon: Building2,
@@ -95,10 +136,24 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-hero opacity-50" />
-        <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-primary/10 blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 rounded-full bg-accent/10 blur-3xl animate-pulse-slow" />
+      <section 
+        className="pt-32 pb-20 px-4 relative overflow-hidden"
+        style={content.hero_background_url ? {
+          backgroundImage: `url(${content.hero_background_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
+        {!content.hero_background_url && (
+          <>
+            <div className="absolute inset-0 gradient-hero opacity-50" />
+            <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-primary/10 blur-3xl animate-pulse-slow" />
+            <div className="absolute bottom-20 left-10 w-96 h-96 rounded-full bg-accent/10 blur-3xl animate-pulse-slow" />
+          </>
+        )}
+        {content.hero_background_url && (
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+        )}
         
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -108,12 +163,17 @@ const Index = () => {
             </div>
             
             <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 animate-slide-up">
-              Connect. <span className="text-gradient">Grow.</span> Succeed.
+              {content.hero_title.includes('.') ? (
+                <>
+                  {content.hero_title.split('.')[0]}. <span className="text-gradient">{content.hero_title.split('.')[1]?.trim()}.</span> {content.hero_title.split('.').slice(2).join('.')}
+                </>
+              ) : (
+                content.hero_title
+              )}
             </h1>
             
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              The ultimate platform connecting companies, job seekers, and customers. 
-              Build your network, find opportunities, and grow your business.
+              {content.hero_subtitle}
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
@@ -184,10 +244,10 @@ const Index = () => {
             
             <div className="relative z-10 px-8 py-16 md:py-24 text-center">
               <h2 className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-6">
-                Ready to Grow Your Business?
+                {content.cta_title}
               </h2>
               <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                Join thousands of companies already using ConnectHub to find talent and reach customers.
+                {content.cta_subtitle}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button variant="accent" size="xl" asChild>
