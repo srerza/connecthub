@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, ArrowLeft, Loader2, User, Users } from 'lucide-react';
+import { Building2, ArrowLeft, Loader2, User, Users, Wallet } from 'lucide-react';
 import { z } from 'zod';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -269,6 +269,24 @@ const Auth = () => {
                       </div>
                     </RadioGroup>
                   </div>
+                  
+                  {/* Subscription Fee Notice for Company */}
+                  {signUpData.accountType === 'company' && (
+                    <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                          <Wallet className="w-4 h-4 text-warning" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-warning">Subscription Required</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Company registration requires a <span className="font-bold text-foreground">UGX 50,000</span> subscription fee.
+                            You can deposit funds to your virtual wallet after registration.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>

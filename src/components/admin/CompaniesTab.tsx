@@ -138,7 +138,7 @@ export const CompaniesTab = () => {
                     <>
                       <Button
                         size="sm"
-                        variant="success"
+                        variant="default"
                         onClick={() => updateCompanyStatus(company.id, 'approved')}
                       >
                         <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -160,7 +160,17 @@ export const CompaniesTab = () => {
                       variant="outline"
                       onClick={() => updateCompanyStatus(company.id, 'suspended')}
                     >
-                      Suspend
+                      Deactivate
+                    </Button>
+                  )}
+                  {company.status === 'suspended' && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => updateCompanyStatus(company.id, 'approved')}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                      Activate
                     </Button>
                   )}
                   <Button
