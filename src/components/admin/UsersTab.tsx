@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Shield, Building2, Loader2 } from 'lucide-react';
+import { User, Shield, Building2, Loader2, Trash2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -86,6 +87,25 @@ export const UsersTab = () => {
 
     toast({ title: 'Role updated successfully!' });
     fetchData();
+  };
+
+  const deleteUser = async (userId: string) => {
+    // Delete user role first
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    
+    // Delete profile (this will cascade to other related data)
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'User deleted successfully!' });
+      fetchData();
+    }
   };
 
   const getRoleIcon = (role: string | undefined) => {
@@ -170,6 +190,31 @@ export const UsersTab = () => {
                         <SelectItem value="superadmin">Superadmin</SelectItem>
                       </SelectContent>
                     </Select>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {profile.full_name || profile.email}? This action cannot be undone and will remove all their data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteUser(profile.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               );

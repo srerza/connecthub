@@ -14,9 +14,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { MediaUpload } from '@/components/MediaUpload';
 import { InquiriesPanel } from '@/components/InquiriesPanel';
+import { CompanyWallet } from '@/components/CompanyWallet';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -364,11 +365,19 @@ const Dashboard = () => {
                     <ShoppingBag className="w-4 h-4" />
                     Products & Jobs
                   </TabsTrigger>
+                  <TabsTrigger value="wallet" className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    Wallet
+                  </TabsTrigger>
                   <TabsTrigger value="inquiries" className="flex items-center gap-2">
                     <MessageCircle className="w-4 h-4" />
                     Inquiries
                   </TabsTrigger>
                 </TabsList>
+                
+                <TabsContent value="wallet">
+                  <CompanyWallet companyId={company.id} />
+                </TabsContent>
                 
                 <TabsContent value="listings">
               <div className="grid md:grid-cols-2 gap-6">
