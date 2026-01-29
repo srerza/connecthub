@@ -82,6 +82,38 @@ export type Database = {
         }
         Relationships: []
       }
+      company_wallets: {
+        Row: {
+          balance: number
+          company_id: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          balance?: number
+          company_id: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          balance?: number
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_wallets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           company_id: string
@@ -349,6 +381,68 @@ export type Database = {
         }
         Relationships: []
       }
+      support_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          requires_admin: boolean | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          requires_admin?: boolean | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          requires_admin?: boolean | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message: string
+          sender_id: string | null
+          sender_type: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+          sender_id?: string | null
+          sender_type: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          sender_id?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -366,6 +460,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          mobile_number: string | null
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          transaction_type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          mobile_number?: string | null
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_type?: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          mobile_number?: string | null
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "company_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
