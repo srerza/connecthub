@@ -53,7 +53,10 @@ export const SupportChatbot = () => {
         (payload) => {
           const newMsg = payload.new as Message;
           setMessages((prev) => {
-            if (prev.find(m => m.id === newMsg.id)) return prev;
+            // Avoid duplicates by checking both id and message content
+            if (prev.find(m => m.id === newMsg.id || (m.message === newMsg.message && m.sender_type === newMsg.sender_type))) {
+              return prev;
+            }
             return [...prev, newMsg];
           });
         }
@@ -103,14 +106,24 @@ export const SupportChatbot = () => {
           variant: 'destructive',
         });
       } else if (newConv) {
+        // Add welcome message first
+        const welcomeMessage = {
+          id: crypto.randomUUID(),
+          sender_type: 'bot' as const,
+          message: "👋 Hello! I'm ConnectHub's support assistant. How can I help you today?\n\nI can help with:\n- Platform navigation\n- Registration questions\n- Wallet & deposits\n- Job and product listings\n\nIf you need to speak with a human, just type **'talk to admin'**.",
+          created_at: new Date().toISOString(),
+        };
+        
+        // Set welcome message immediately in UI
+        setMessages([welcomeMessage]);
         setConversationId(newConv.id);
-        // Add welcome message
-        await supabase.from('support_messages').insert({
+        
+        // Then persist to database (don't await to avoid blocking UI)
+        supabase.from('support_messages').insert({
           conversation_id: newConv.id,
           sender_type: 'bot',
-          message: "👋 Hello! I'm ConnectHub's support assistant. How can I help you today?\n\nI can help with:\n- Platform navigation\n- Registration questions\n- Wallet & deposits\n- Job and product listings\n\nIf you need to speak with a human, just type **'talk to admin'**.",
+          message: welcomeMessage.message,
         });
-        await fetchMessages(newConv.id);
       }
     }
 
