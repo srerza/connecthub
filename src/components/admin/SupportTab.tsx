@@ -92,12 +92,38 @@ export const SupportTab = () => {
     
     const { data, error } = await supabase
       .from('support_conversations')
-      .select('*, profiles(full_name, email)')
+      .select('*')
       .order('requires_admin', { ascending: false })
       .order('updated_at', { ascending: false });
 
     if (data) {
-      setConversations(data as unknown as Conversation[]);
+      const convData = data as unknown as Conversation[];
+      
+      // Fetch profile info separately
+      const userIds = Array.from(new Set(convData.map((c) => c.user_id).filter(Boolean)));
+      
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+        
+        if (profilesData) {
+          const profileById = new Map(
+            profilesData.map((p) => [p.id, { full_name: p.full_name, email: p.email }])
+          );
+          setConversations(
+            convData.map((c) => ({
+              ...c,
+              profiles: profileById.get(c.user_id) ?? c.profiles,
+            }))
+          );
+        } else {
+          setConversations(convData);
+        }
+      } else {
+        setConversations(convData);
+      }
     }
 
     setLoading(false);

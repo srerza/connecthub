@@ -52,9 +52,10 @@ serve(async (req) => {
 
     // Check if this needs admin help based on keywords
     const needsAdminKeywords = [
-      'speak to admin', 'talk to human', 'real person', 'human support',
+      'talk to admin', 'speak to admin', 'talk to human', 'real person', 'human support',
       'superadmin', 'talk to someone', 'speak to someone', 'contact support',
-      'need help from admin', 'escalate', 'manager', 'supervisor'
+      'need help from admin', 'escalate', 'manager', 'supervisor', 'connect me to',
+      'forward to admin', 'need admin', 'want admin', 'admin please', 'human please'
     ];
     
     const lowerMessage = message.toLowerCase();

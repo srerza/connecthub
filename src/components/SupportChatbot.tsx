@@ -150,7 +150,16 @@ export const SupportChatbot = () => {
     setNewMessage('');
     setSending(true);
 
-    // Save user message
+    // Optimistically add user message to UI immediately
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      sender_type: 'user',
+      message: messageText,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Save user message to database
     const { error: msgError } = await supabase.from('support_messages').insert({
       conversation_id: conversationId,
       sender_type: 'user',
@@ -164,6 +173,8 @@ export const SupportChatbot = () => {
         description: 'Failed to send message.',
         variant: 'destructive',
       });
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
       setSending(false);
       return;
     }
@@ -182,9 +193,18 @@ export const SupportChatbot = () => {
         throw response.error;
       }
 
-      // Save bot response
+      // Add bot response to UI immediately
       if (response.data?.response) {
-        await supabase.from('support_messages').insert({
+        const botMessage: Message = {
+          id: crypto.randomUUID(),
+          sender_type: 'bot',
+          message: response.data.response,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, botMessage]);
+
+        // Persist bot response to database (background)
+        supabase.from('support_messages').insert({
           conversation_id: conversationId,
           sender_type: 'bot',
           message: response.data.response,
@@ -192,11 +212,20 @@ export const SupportChatbot = () => {
       }
     } catch (error) {
       console.error('Chatbot error:', error);
-      // Still allow conversation to continue
-      await supabase.from('support_messages').insert({
-        conversation_id: conversationId,
+      // Add error message to UI
+      const errorMessage: Message = {
+        id: crypto.randomUUID(),
         sender_type: 'bot',
         message: "I'm having trouble processing your request right now. Please try again or type 'talk to admin' to speak with our support team.",
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+
+      // Persist error message to database
+      supabase.from('support_messages').insert({
+        conversation_id: conversationId,
+        sender_type: 'bot',
+        message: errorMessage.message,
       });
     }
 
