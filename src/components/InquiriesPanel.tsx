@@ -92,7 +92,6 @@ export const InquiriesPanel = ({ companyId }: InquiriesPanelProps) => {
       .from('inquiries')
       .select(`
         *,
-        profiles:user_id(full_name, email),
         products:product_id(name),
         jobs:job_id(title)
       `)
@@ -102,11 +101,42 @@ export const InquiriesPanel = ({ companyId }: InquiriesPanelProps) => {
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to load inquiries.',
+        description: error.message || 'Failed to load inquiries.',
         variant: 'destructive',
       });
     } else {
-      setInquiries(data as unknown as Inquiry[]);
+      const inquiriesData = (data as unknown as Inquiry[]) || [];
+
+      // Hydrate user display info without relying on a FK join (no inquiries.user_id -> profiles.id FK)
+      const userIds = Array.from(
+        new Set(inquiriesData.map((i) => i.user_id).filter(Boolean))
+      );
+
+      if (userIds.length === 0) {
+        setInquiries(inquiriesData);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError || !profilesData) {
+        // Still show inquiries even if profile lookup fails
+        setInquiries(inquiriesData);
+      } else {
+        const profileById = new Map(
+          profilesData.map((p) => [p.id, { full_name: p.full_name, email: p.email }])
+        );
+        setInquiries(
+          inquiriesData.map((i) => ({
+            ...i,
+            profiles: profileById.get(i.user_id) ?? i.profiles,
+          }))
+        );
+      }
     }
     setLoading(false);
   };
