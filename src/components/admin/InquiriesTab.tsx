@@ -44,7 +44,6 @@ export const InquiriesTab = () => {
       .from('inquiries')
       .select(`
         *,
-        profiles:user_id(full_name, email),
         companies:company_id(name),
         products:product_id(name),
         jobs:job_id(title)
@@ -54,11 +53,40 @@ export const InquiriesTab = () => {
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to load inquiries.',
+        description: error.message || 'Failed to load inquiries.',
         variant: 'destructive',
       });
     } else {
-      setInquiries(data as unknown as Inquiry[]);
+      const inquiriesData = (data as unknown as Inquiry[]) || [];
+
+      const userIds = Array.from(
+        new Set(inquiriesData.map((i) => i.user_id).filter(Boolean))
+      );
+
+      if (userIds.length === 0) {
+        setInquiries(inquiriesData);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError || !profilesData) {
+        setInquiries(inquiriesData);
+      } else {
+        const profileById = new Map(
+          profilesData.map((p) => [p.id, { full_name: p.full_name, email: p.email }])
+        );
+        setInquiries(
+          inquiriesData.map((i) => ({
+            ...i,
+            profiles: profileById.get(i.user_id) ?? i.profiles,
+          }))
+        );
+      }
     }
     setLoading(false);
   };
