@@ -59,15 +59,19 @@ export const InterestModal = ({
       ? { ...baseData, product_id: itemId }
       : { ...baseData, job_id: itemId };
 
-    const { error } = await supabase.from('inquiries').insert(inquiryData);
+    console.log('Submitting inquiry:', inquiryData);
+
+    const { data, error } = await supabase.from('inquiries').insert(inquiryData).select();
 
     if (error) {
+      console.error('Inquiry submission error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send your interest. Please try again.',
+        description: error.message || 'Failed to send your interest. Please try again.',
         variant: 'destructive',
       });
     } else {
+      console.log('Inquiry submitted successfully:', data);
       setSubmitted(true);
       setMessage('');
     }
