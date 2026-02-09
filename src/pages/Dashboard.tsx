@@ -17,8 +17,9 @@ import { InquiriesPanel } from '@/components/InquiriesPanel';
 import { CompanyWallet } from '@/components/CompanyWallet';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet, CreditCard, Star, Zap, Crown
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Company {
@@ -26,6 +27,17 @@ interface Company {
   name: string;
   description: string | null;
   status: string;
+  subscription_plan_id: string | null;
+  subscription_expires_at: string | null;
+  subscription_started_at: string | null;
+}
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  duration_days: number;
+  features: string[];
 }
 
 interface ProductMedia {
@@ -65,6 +77,7 @@ const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
   
   const [company, setCompany] = useState<Company | null>(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -94,6 +107,13 @@ const Dashboard = () => {
   }, [user]);
 
   const fetchCompanyData = async () => {
+    // Fetch subscription plans
+    const { data: plansData } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .order('price', { ascending: true });
+    if (plansData) setSubscriptionPlans(plansData as unknown as SubscriptionPlan[]);
+
     // Fetch user's company
     const { data: companyData } = await supabase
       .from('companies')
@@ -102,7 +122,7 @@ const Dashboard = () => {
       .maybeSingle();
     
     if (companyData) {
-      setCompany(companyData);
+      setCompany(companyData as unknown as Company);
       
       // Fetch products with media
       const { data: productsData } = await supabase
@@ -359,8 +379,12 @@ const Dashboard = () => {
             </Card>
 
             {company.status === 'approved' && (
-              <Tabs defaultValue="listings" className="space-y-6">
+              <Tabs defaultValue="subscription" className="space-y-6">
                 <TabsList>
+                  <TabsTrigger value="subscription" className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Subscription
+                  </TabsTrigger>
                   <TabsTrigger value="listings" className="flex items-center gap-2">
                     <ShoppingBag className="w-4 h-4" />
                     Products & Jobs
@@ -374,6 +398,90 @@ const Dashboard = () => {
                     Inquiries
                   </TabsTrigger>
                 </TabsList>
+                
+                <TabsContent value="subscription">
+                  <div className="space-y-6">
+                    {/* Current Plan Status */}
+                    {company.subscription_plan_id && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="font-display">Current Subscription</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-lg">
+                                {subscriptionPlans.find(p => p.id === company.subscription_plan_id)?.name || 'Active Plan'}
+                              </p>
+                              {company.subscription_expires_at && (
+                                <p className="text-sm text-muted-foreground">
+                                  Expires: {format(new Date(company.subscription_expires_at), 'MMM d, yyyy')}
+                                </p>
+                              )}
+                            </div>
+                            <Badge className={
+                              company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
+                                ? 'bg-success/10 text-success'
+                                : 'bg-destructive/10 text-destructive'
+                            }>
+                              {company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
+                                ? 'Active'
+                                : 'Expired'}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Plan Selection */}
+                    <div className="grid md:grid-cols-3 gap-6">
+                      {subscriptionPlans.map((plan, index) => {
+                        const icons = [<Star key="s" className="w-6 h-6" />, <Zap key="z" className="w-6 h-6" />, <Crown key="c" className="w-6 h-6" />];
+                        const isCurrentPlan = company.subscription_plan_id === plan.id;
+                        
+                        return (
+                          <Card key={plan.id} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''} ${index === 2 ? 'border-primary' : ''}`}>
+                            {index === 2 && (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                              </div>
+                            )}
+                            <CardHeader className="text-center">
+                              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2 text-primary">
+                                {icons[index] || icons[0]}
+                              </div>
+                              <CardTitle className="font-display">{plan.name}</CardTitle>
+                              <div className="mt-2">
+                                <span className="text-3xl font-bold">UGX {plan.price.toLocaleString()}</span>
+                                <span className="text-muted-foreground">/{plan.duration_days} days</span>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <ul className="space-y-2 mb-6">
+                                {plan.features.map((feature, i) => (
+                                  <li key={i} className="flex items-center gap-2 text-sm">
+                                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                                    {feature}
+                                  </li>
+                                ))}
+                              </ul>
+                              <Button
+                                variant={isCurrentPlan ? 'outline' : 'hero'}
+                                className="w-full"
+                                disabled={isCurrentPlan}
+                              >
+                                {isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center">
+                      To subscribe, deposit funds to your wallet and contact admin for plan activation.
+                    </p>
+                  </div>
+                </TabsContent>
                 
                 <TabsContent value="wallet">
                   <CompanyWallet companyId={company.id} />
