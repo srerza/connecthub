@@ -39,7 +39,7 @@ export const CompanyWallet = ({ companyId }: CompanyWalletProps) => {
   const [depositData, setDepositData] = useState({ amount: '', mobileNumber: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  const DEPOSIT_NUMBER = '+256740327473';
+  const MERCHANT_CODE = '664588';
 
   useEffect(() => {
     fetchWalletData();
@@ -103,7 +103,7 @@ export const CompanyWallet = ({ companyId }: CompanyWalletProps) => {
     } else {
       toast({
         title: 'Deposit request submitted!',
-        description: `Please send UGX ${amount.toLocaleString()} to ${DEPOSIT_NUMBER} from ${depositData.mobileNumber}. Your balance will be updated once confirmed.`,
+        description: `Please pay UGX ${amount.toLocaleString()} to Merchant Code ${MERCHANT_CODE} via MTN or Airtel. Your balance will be updated once confirmed.`,
       });
       setDepositData({ amount: '', mobileNumber: '' });
       setIsDepositOpen(false);
@@ -113,9 +113,9 @@ export const CompanyWallet = ({ companyId }: CompanyWalletProps) => {
     setSubmitting(false);
   };
 
-  const copyNumber = () => {
-    navigator.clipboard.writeText(DEPOSIT_NUMBER);
-    toast({ title: 'Number copied!' });
+  const copyMerchantCode = () => {
+    navigator.clipboard.writeText(MERCHANT_CODE);
+    toast({ title: 'Merchant code copied!' });
   };
 
   const getStatusBadge = (status: string) => {
@@ -162,23 +162,30 @@ export const CompanyWallet = ({ companyId }: CompanyWalletProps) => {
               <DialogHeader>
                 <DialogTitle>Deposit Funds</DialogTitle>
                 <DialogDescription>
-                  Send mobile money to the number below and submit your deposit request.
+                  Pay via MTN MoMo or Airtel Money using the merchant code below.
                 </DialogDescription>
               </DialogHeader>
               
-              {/* Deposit Instructions */}
+              {/* Merchant Payment Instructions */}
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 space-y-3">
-                <p className="text-sm font-medium">Send money to:</p>
+                <p className="text-sm font-medium">Merchant Code:</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 p-3 rounded-lg bg-background border border-border font-mono text-lg">
-                    {DEPOSIT_NUMBER}
+                  <div className="flex-1 p-3 rounded-lg bg-background border border-border font-mono text-2xl text-center font-bold">
+                    {MERCHANT_CODE}
                   </div>
-                  <Button variant="outline" size="icon" onClick={copyNumber}>
+                  <Button variant="outline" size="icon" onClick={copyMerchantCode}>
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground text-sm">How to pay:</p>
+                  <div className="space-y-1">
+                    <p><strong>MTN MoMo:</strong> Dial *165*3# → Select Merchant Payment → Enter code <strong>{MERCHANT_CODE}</strong> → Enter amount → Confirm</p>
+                    <p><strong>Airtel Money:</strong> Dial *185*9# → Select Pay Bill → Enter merchant code <strong>{MERCHANT_CODE}</strong> → Enter amount → Confirm</p>
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  After sending, fill in the form below with your details.
+                  After paying, fill in the form below with your details for confirmation.
                 </p>
               </div>
               
