@@ -90,21 +90,21 @@ export const UsersTab = () => {
   };
 
   const deleteUser = async (userId: string) => {
-    // Delete user role first
-    await supabase.from('user_roles').delete().eq('user_id', userId);
-    
-    // Delete profile (this will cascade to other related data)
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      toast({ title: 'User deleted successfully!', description: 'Account and all data removed.' });
+      fetchData();
+    } catch (err: any) {
       toast({
         title: 'Error',
-        description: 'Failed to delete user.',
+        description: err.message || 'Failed to delete user.',
         variant: 'destructive',
       });
-    } else {
-      toast({ title: 'User deleted successfully!' });
-      fetchData();
     }
   };
 

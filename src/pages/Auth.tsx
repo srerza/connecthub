@@ -45,10 +45,42 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && !isLoading) {
+      // Already logged in, redirect based on role
+      const checkAndRedirect = async () => {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (roleData?.role === 'superadmin') {
+          navigate('/admin');
+        } else if (roleData?.role === 'company') {
+          navigate('/dashboard');
+        } else {
+          navigate('/my-dashboard');
+        }
+      };
+      checkAndRedirect();
     }
-  }, [user, navigate]);
+  }, [user, navigate, isLoading]);
+
+  const redirectByRole = async (userId: string) => {
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (roleData?.role === 'superadmin') {
+      navigate('/admin');
+    } else if (roleData?.role === 'company') {
+      navigate('/dashboard');
+    } else {
+      navigate('/my-dashboard');
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +102,13 @@ const Auth = () => {
           title: 'Welcome back!',
           description: 'You have successfully signed in.',
         });
-        navigate('/dashboard');
+        // Get user and redirect based on role
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          await redirectByRole(currentUser.id);
+        } else {
+          navigate('/my-dashboard');
+        }
       }
     } catch (err) {
       if (err instanceof z.ZodError) {

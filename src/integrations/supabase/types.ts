@@ -54,6 +54,9 @@ export type Database = {
           logo_url: string | null
           name: string
           status: string
+          subscription_expires_at: string | null
+          subscription_plan_id: string | null
+          subscription_started_at: string | null
           updated_at: string | null
           user_id: string
           website: string | null
@@ -65,6 +68,9 @@ export type Database = {
           logo_url?: string | null
           name: string
           status?: string
+          subscription_expires_at?: string | null
+          subscription_plan_id?: string | null
+          subscription_started_at?: string | null
           updated_at?: string | null
           user_id: string
           website?: string | null
@@ -76,11 +82,22 @@ export type Database = {
           logo_url?: string | null
           name?: string
           status?: string
+          subscription_expires_at?: string | null
+          subscription_plan_id?: string | null
+          subscription_started_at?: string | null
           updated_at?: string | null
           user_id?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_subscription_plan_id_fkey"
+            columns: ["subscription_plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_wallets: {
         Row: {
@@ -378,6 +395,33 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          duration_days: number
+          features: string[] | null
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          duration_days: number
+          features?: string[] | null
+          id?: string
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          duration_days?: number
+          features?: string[] | null
+          id?: string
+          name?: string
+          price?: number
         }
         Relationships: []
       }
