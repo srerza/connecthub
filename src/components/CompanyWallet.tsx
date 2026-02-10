@@ -218,6 +218,38 @@ export const CompanyWallet = ({ companyId }: CompanyWalletProps) => {
                   {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Submit Deposit Request
                 </Button>
+
+                {/* USSD Quick-Pay Buttons */}
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs text-muted-foreground text-center font-medium">Or tap to pay directly via mobile money:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      asChild
+                      className="bg-[hsl(48,96%,53%)] hover:bg-[hsl(48,96%,45%)] text-[hsl(0,0%,10%)] font-semibold"
+                      disabled={!depositData.amount || parseFloat(depositData.amount) <= 0}
+                    >
+                      <a href={`tel:*165*3*${MERCHANT_CODE}*${depositData.amount || '0'}%23`}>
+                        <Phone className="w-4 h-4 mr-1" />
+                        Pay via MTN
+                      </a>
+                    </Button>
+                    <Button
+                      type="button"
+                      asChild
+                      className="bg-[hsl(0,72%,51%)] hover:bg-[hsl(0,72%,43%)] text-white font-semibold"
+                      disabled={!depositData.amount || parseFloat(depositData.amount) <= 0}
+                    >
+                      <a href={`tel:*185*9*${MERCHANT_CODE}*${depositData.amount || '0'}%23`}>
+                        <Phone className="w-4 h-4 mr-1" />
+                        Pay via Airtel
+                      </a>
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    📱 Works best on mobile. Enter amount first, then tap to dial.
+                  </p>
+                </div>
               </form>
             </DialogContent>
           </Dialog>

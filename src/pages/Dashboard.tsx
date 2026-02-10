@@ -17,7 +17,7 @@ import { InquiriesPanel } from '@/components/InquiriesPanel';
 import { CompanyWallet } from '@/components/CompanyWallet';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet, CreditCard, Star, Zap, Crown
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet, CreditCard, Star, Zap, Crown, Phone
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -38,6 +38,8 @@ interface SubscriptionPlan {
   price: number;
   duration_days: number;
   features: string[];
+  max_jobs: number;
+  max_products: number;
 }
 
 interface ProductMedia {
@@ -144,9 +146,24 @@ const Dashboard = () => {
     }
   };
 
+  const getCurrentPlanLimits = () => {
+    if (!company?.subscription_plan_id) return null;
+    return subscriptionPlans.find(p => p.id === company.subscription_plan_id) || null;
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company || company.status !== 'approved') return;
+
+    const plan = getCurrentPlanLimits();
+    if (plan && products.length >= plan.max_products) {
+      toast({
+        title: 'Product limit reached',
+        description: `Your ${plan.name} plan allows up to ${plan.max_products} products. Please upgrade your plan.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -188,6 +205,16 @@ const Dashboard = () => {
   const handleAddJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company || company.status !== 'approved') return;
+
+    const plan = getCurrentPlanLimits();
+    if (plan && jobs.length >= plan.max_jobs) {
+      toast({
+        title: 'Job limit reached',
+        description: `Your ${plan.name} plan allows up to ${plan.max_jobs} jobs. Please upgrade your plan.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -402,42 +429,58 @@ const Dashboard = () => {
                 <TabsContent value="subscription">
                   <div className="space-y-6">
                     {/* Current Plan Status */}
-                    {company.subscription_plan_id && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="font-display">Current Subscription</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold text-lg">
-                                {subscriptionPlans.find(p => p.id === company.subscription_plan_id)?.name || 'Active Plan'}
-                              </p>
-                              {company.subscription_expires_at && (
-                                <p className="text-sm text-muted-foreground">
-                                  Expires: {format(new Date(company.subscription_expires_at), 'MMM d, yyyy')}
+                    {company.subscription_plan_id && (() => {
+                      const currentPlan = subscriptionPlans.find(p => p.id === company.subscription_plan_id);
+                      return (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="font-display">Current Subscription</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <p className="font-semibold text-lg">
+                                  {currentPlan?.name || 'Active Plan'}
                                 </p>
-                              )}
+                                {company.subscription_expires_at && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Expires: {format(new Date(company.subscription_expires_at), 'MMM d, yyyy')}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge className={
+                                company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
+                                  ? 'bg-success/10 text-success'
+                                  : 'bg-destructive/10 text-destructive'
+                              }>
+                                {company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
+                                  ? 'Active'
+                                  : 'Expired'}
+                              </Badge>
                             </div>
-                            <Badge className={
-                              company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
-                                ? 'bg-success/10 text-success'
-                                : 'bg-destructive/10 text-destructive'
-                            }>
-                              {company.subscription_expires_at && new Date(company.subscription_expires_at) > new Date()
-                                ? 'Active'
-                                : 'Expired'}
-                            </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                            {currentPlan && (
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 rounded-lg bg-secondary/50 border text-center">
+                                  <p className="text-2xl font-bold">{jobs.length} / {currentPlan.max_jobs}</p>
+                                  <p className="text-xs text-muted-foreground">Jobs Used</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-secondary/50 border text-center">
+                                  <p className="text-2xl font-bold">{products.length} / {currentPlan.max_products}</p>
+                                  <p className="text-xs text-muted-foreground">Products Used</p>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })()}
 
                     {/* Plan Selection */}
                     <div className="grid md:grid-cols-3 gap-6">
                       {subscriptionPlans.map((plan, index) => {
                         const icons = [<Star key="s" className="w-6 h-6" />, <Zap key="z" className="w-6 h-6" />, <Crown key="c" className="w-6 h-6" />];
                         const isCurrentPlan = company.subscription_plan_id === plan.id;
+                        const MERCHANT_CODE = '664588';
                         
                         return (
                           <Card key={plan.id} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''} ${index === 2 ? 'border-primary' : ''}`}>
@@ -457,28 +500,53 @@ const Dashboard = () => {
                               </div>
                             </CardHeader>
                             <CardContent>
-                              <ul className="space-y-2 mb-6">
+                              <ul className="space-y-2 mb-4">
                                 {plan.features.map((feature, i) => (
                                   <li key={i} className="flex items-center gap-2 text-sm">
                                     <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                                     {feature}
                                   </li>
                                 ))}
+                                <li className="flex items-center gap-2 text-sm">
+                                  <Briefcase className="w-4 h-4 text-primary shrink-0" />
+                                  Up to {plan.max_jobs} jobs
+                                </li>
+                                <li className="flex items-center gap-2 text-sm">
+                                  <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
+                                  Up to {plan.max_products} products
+                                </li>
                               </ul>
-                              <Button
-                                variant={isCurrentPlan ? 'outline' : 'hero'}
-                                className="w-full"
-                                disabled={isCurrentPlan}
-                              >
-                                {isCurrentPlan ? 'Current Plan' : 'Select Plan'}
-                              </Button>
+                              {isCurrentPlan ? (
+                                <Button variant="outline" className="w-full" disabled>Current Plan</Button>
+                              ) : (
+                                <div className="space-y-2">
+                                  <Button
+                                    asChild
+                                    className="w-full bg-[hsl(48,96%,53%)] hover:bg-[hsl(48,96%,45%)] text-[hsl(0,0%,10%)] font-semibold"
+                                  >
+                                    <a href={`tel:*165*3*${MERCHANT_CODE}*${plan.price}%23`}>
+                                      <Phone className="w-4 h-4 mr-1" />
+                                      Pay via MTN
+                                    </a>
+                                  </Button>
+                                  <Button
+                                    asChild
+                                    className="w-full bg-[hsl(0,72%,51%)] hover:bg-[hsl(0,72%,43%)] text-white font-semibold"
+                                  >
+                                    <a href={`tel:*185*9*${MERCHANT_CODE}*${plan.price}%23`}>
+                                      <Phone className="w-4 h-4 mr-1" />
+                                      Pay via Airtel
+                                    </a>
+                                  </Button>
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         );
                       })}
                     </div>
                     <p className="text-sm text-muted-foreground text-center">
-                      To subscribe, deposit funds to your wallet and contact admin for plan activation.
+                      📱 Tap a payment button on mobile to dial directly. After paying, contact admin for plan activation.
                     </p>
                   </div>
                 </TabsContent>

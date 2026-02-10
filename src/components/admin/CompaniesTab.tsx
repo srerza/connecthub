@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, CheckCircle2, XCircle, Trash2, Loader2, CreditCard, CalendarDays } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { ManagePlansDialog } from './ManagePlansDialog';
 
 interface Company {
   id: string;
@@ -29,6 +30,8 @@ interface SubscriptionPlan {
   price: number;
   duration_days: number;
   features: string[];
+  max_jobs: number;
+  max_products: number;
 }
 
 export const CompaniesTab = () => {
@@ -118,11 +121,16 @@ export const CompaniesTab = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-display flex items-center gap-2">
-          <Building2 className="w-5 h-5" />
-          Company Applications
-        </CardTitle>
-        <CardDescription>Review, manage registrations, and assign subscription plans</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-display flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              Company Applications
+            </CardTitle>
+            <CardDescription>Review, manage registrations, and assign subscription plans</CardDescription>
+          </div>
+          <ManagePlansDialog plans={plans} onUpdated={fetchData} />
+        </div>
       </CardHeader>
       <CardContent>
         {companies.length === 0 ? (
