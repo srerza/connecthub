@@ -404,6 +404,8 @@ export type Database = {
           duration_days: number
           features: string[] | null
           id: string
+          max_jobs: number
+          max_products: number
           name: string
           price: number
         }
@@ -412,6 +414,8 @@ export type Database = {
           duration_days: number
           features?: string[] | null
           id?: string
+          max_jobs?: number
+          max_products?: number
           name: string
           price: number
         }
@@ -420,6 +424,8 @@ export type Database = {
           duration_days?: number
           features?: string[] | null
           id?: string
+          max_jobs?: number
+          max_products?: number
           name?: string
           price?: number
         }
