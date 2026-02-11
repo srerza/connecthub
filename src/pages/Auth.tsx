@@ -32,6 +32,19 @@ const Auth = () => {
   const { user, signUp, signIn } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [minPlanPrice, setMinPlanPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchMinPrice = async () => {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select('price')
+        .order('price', { ascending: true })
+        .limit(1);
+      if (data && data.length > 0) setMinPlanPrice(data[0].price);
+    };
+    fetchMinPrice();
+  }, []);
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'register' ? 'register' : 'login');
   const typeParam = searchParams.get('type');
   
@@ -318,7 +331,7 @@ const Auth = () => {
                         <div>
                           <p className="font-medium text-warning">Subscription Required</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Company registration requires a <span className="font-bold text-foreground">UGX 50,000</span> subscription fee.
+                            Company registration requires a <span className="font-bold text-foreground">UGX {minPlanPrice ? minPlanPrice.toLocaleString() : '50,000'}</span> subscription fee.
                             You can deposit funds to your virtual wallet after registration.
                           </p>
                         </div>

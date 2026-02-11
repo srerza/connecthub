@@ -24,6 +24,13 @@ const Index = () => {
     cta_subtitle: 'Join thousands of companies already using ConnectHub to find talent and reach customers.',
   });
 
+  const [stats, setStats] = useState([
+    { value: '500+', label: 'Companies' },
+    { value: '10K+', label: 'Job Listings' },
+    { value: '50K+', label: 'Users' },
+    { value: '98%', label: 'Satisfaction' },
+  ]);
+
   useEffect(() => {
     fetchContent();
   }, []);
@@ -45,6 +52,12 @@ const Index = () => {
         cta_title: contentMap['cta_title'] || content.cta_title,
         cta_subtitle: contentMap['cta_subtitle'] || content.cta_subtitle,
       });
+      setStats([
+        { value: contentMap['stat_companies'] || '500+', label: contentMap['stat_companies_label'] || 'Companies' },
+        { value: contentMap['stat_jobs'] || '10K+', label: contentMap['stat_jobs_label'] || 'Job Listings' },
+        { value: contentMap['stat_users'] || '50K+', label: contentMap['stat_users_label'] || 'Users' },
+        { value: contentMap['stat_satisfaction'] || '98%', label: contentMap['stat_satisfaction_label'] || 'Satisfaction' },
+      ]);
     }
   };
   const features = [
@@ -70,12 +83,7 @@ const Index = () => {
     },
   ];
 
-  const stats = [
-    { value: '500+', label: 'Companies' },
-    { value: '10K+', label: 'Job Listings' },
-    { value: '50K+', label: 'Users' },
-    { value: '98%', label: 'Satisfaction' },
-  ];
+  // stats are now loaded from DB in state above
 
   return (
     <div className="min-h-screen bg-background">
