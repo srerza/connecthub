@@ -59,25 +59,10 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !isLoading) {
-      // Already logged in, redirect based on role
-      const checkAndRedirect = async () => {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (roleData?.role === 'superadmin') {
-          navigate('/admin');
-        } else if (roleData?.role === 'company') {
-          navigate('/dashboard');
-        } else {
-          navigate('/my-dashboard');
-        }
-      };
-      checkAndRedirect();
+      // Already logged in on page load, redirect based on role
+      redirectByRole(user.id);
     }
-  }, [user, navigate, isLoading]);
+  }, [user, isLoading]);
 
   const redirectByRole = async (userId: string) => {
     const { data: roleData } = await supabase
@@ -102,7 +87,10 @@ const Auth = () => {
     try {
       signInSchema.parse(signInData);
       
-      const { error } = await signIn(signInData.email, signInData.password);
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: signInData.email,
+        password: signInData.password,
+      });
       
       if (error) {
         toast({
@@ -110,18 +98,13 @@ const Auth = () => {
           description: error.message,
           variant: 'destructive',
         });
-      } else {
+        setIsLoading(false);
+      } else if (data.user) {
         toast({
           title: 'Welcome back!',
           description: 'You have successfully signed in.',
         });
-        // Get user and redirect based on role
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser) {
-          await redirectByRole(currentUser.id);
-        } else {
-          navigate('/my-dashboard');
-        }
+        await redirectByRole(data.user.id);
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -131,7 +114,6 @@ const Auth = () => {
           variant: 'destructive',
         });
       }
-    } finally {
       setIsLoading(false);
     }
   };
