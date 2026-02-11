@@ -17,9 +17,9 @@ import { InquiriesPanel } from '@/components/InquiriesPanel';
 import { CompanyWallet } from '@/components/CompanyWallet';
 import { 
   Building2, Plus, Briefcase, ShoppingBag, LogOut, Home,
-  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet, CreditCard, Star, Zap, Crown, Phone
+  Clock, CheckCircle2, XCircle, Loader2, MessageCircle, Image as ImageIcon, Trash2, Wallet, CreditCard, Star, Zap, Crown, Phone, AlertTriangle
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Company {
@@ -404,6 +404,38 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Subscription Expiry Warning */}
+            {company.subscription_expires_at && (() => {
+              const daysLeft = differenceInDays(new Date(company.subscription_expires_at), new Date());
+              if (daysLeft <= 7 && daysLeft > 0) {
+                return (
+                  <div className="mb-8 p-4 rounded-lg bg-warning/10 border border-warning/30 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-warning">Subscription Expiring Soon</p>
+                      <p className="text-sm text-muted-foreground">
+                        Your subscription expires in <span className="font-bold text-foreground">{daysLeft} day{daysLeft !== 1 ? 's' : ''}</span> ({format(new Date(company.subscription_expires_at), 'MMM d, yyyy')}). Please renew to continue posting jobs and products.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              if (daysLeft <= 0) {
+                return (
+                  <div className="mb-8 p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-destructive">Subscription Expired</p>
+                      <p className="text-sm text-muted-foreground">
+                        Your subscription has expired. Please renew to continue using all features.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {company.status === 'approved' && (
               <Tabs defaultValue="subscription" className="space-y-6">

@@ -26,6 +26,14 @@ export const LandingPageTab = () => {
     hero_background_url: '',
     cta_title: '',
     cta_subtitle: '',
+    stat_companies: '',
+    stat_companies_label: '',
+    stat_jobs: '',
+    stat_jobs_label: '',
+    stat_users: '',
+    stat_users_label: '',
+    stat_satisfaction: '',
+    stat_satisfaction_label: '',
   });
 
   useEffect(() => {
@@ -55,6 +63,14 @@ export const LandingPageTab = () => {
         hero_background_url: contentMap['hero_background_url'] || '',
         cta_title: contentMap['cta_title'] || '',
         cta_subtitle: contentMap['cta_subtitle'] || '',
+        stat_companies: contentMap['stat_companies'] || '500+',
+        stat_companies_label: contentMap['stat_companies_label'] || 'Companies',
+        stat_jobs: contentMap['stat_jobs'] || '10K+',
+        stat_jobs_label: contentMap['stat_jobs_label'] || 'Job Listings',
+        stat_users: contentMap['stat_users'] || '50K+',
+        stat_users_label: contentMap['stat_users_label'] || 'Users',
+        stat_satisfaction: contentMap['stat_satisfaction'] || '98%',
+        stat_satisfaction_label: contentMap['stat_satisfaction_label'] || 'Satisfaction',
       });
     }
     setLoading(false);
@@ -202,6 +218,53 @@ export const LandingPageTab = () => {
               placeholder="Join thousands of companies..."
               rows={2}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-display flex items-center gap-2">
+            📊 Stats Section
+          </CardTitle>
+          <CardDescription>
+            Edit the statistics displayed on the landing page (e.g. "500+ Companies")
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 1 Value</Label>
+              <Input value={formData.stat_companies} onChange={(e) => setFormData({ ...formData, stat_companies: e.target.value })} placeholder="500+" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 1 Label</Label>
+              <Input value={formData.stat_companies_label} onChange={(e) => setFormData({ ...formData, stat_companies_label: e.target.value })} placeholder="Companies" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 2 Value</Label>
+              <Input value={formData.stat_jobs} onChange={(e) => setFormData({ ...formData, stat_jobs: e.target.value })} placeholder="10K+" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 2 Label</Label>
+              <Input value={formData.stat_jobs_label} onChange={(e) => setFormData({ ...formData, stat_jobs_label: e.target.value })} placeholder="Job Listings" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 3 Value</Label>
+              <Input value={formData.stat_users} onChange={(e) => setFormData({ ...formData, stat_users: e.target.value })} placeholder="50K+" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 3 Label</Label>
+              <Input value={formData.stat_users_label} onChange={(e) => setFormData({ ...formData, stat_users_label: e.target.value })} placeholder="Users" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 4 Value</Label>
+              <Input value={formData.stat_satisfaction} onChange={(e) => setFormData({ ...formData, stat_satisfaction: e.target.value })} placeholder="98%" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Stat 4 Label</Label>
+              <Input value={formData.stat_satisfaction_label} onChange={(e) => setFormData({ ...formData, stat_satisfaction_label: e.target.value })} placeholder="Satisfaction" />
+            </div>
           </div>
         </CardContent>
       </Card>
