@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { FeaturedSection } from '@/components/FeaturedSection';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star, LayoutDashboard } from 'lucide-react';
+import { Building2, Users, Briefcase, ShoppingBag, ArrowRight, CheckCircle2, Star, LayoutDashboard, Sparkles } from 'lucide-react';
 
 interface LandingContent {
   hero_title: string;
@@ -14,8 +15,30 @@ interface LandingContent {
   cta_subtitle: string;
 }
 
+const smoothEase = [0.22, 1, 0.36, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.1, duration: 0.6, ease: smoothEase as unknown as [number, number, number, number] }
+  })
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: (i: number) => ({
+    opacity: 1, scale: 1,
+    transition: { delay: i * 0.08, duration: 0.5, ease: smoothEase as unknown as [number, number, number, number] }
+  })
+};
+
 const Index = () => {
   const { user, userRole, loading } = useAuth();
+  const { scrollYProgress } = useScroll();
+  const navBg = useTransform(scrollYProgress, [0, 0.05], [0, 1]);
+  const [navOpacity, setNavOpacity] = useState(0);
+
   const [content, setContent] = useState<LandingContent>({
     hero_title: 'Connect. Grow. Succeed.',
     hero_subtitle: 'The ultimate platform connecting companies, job seekers, and customers. Build your network, find opportunities, and grow your business.',
@@ -30,6 +53,11 @@ const Index = () => {
     { value: '50K+', label: 'Users' },
     { value: '98%', label: 'Satisfaction' },
   ]);
+
+  useEffect(() => {
+    const unsub = scrollYProgress.on('change', v => setNavOpacity(Math.min(v * 20, 1)));
+    return unsub;
+  }, [scrollYProgress]);
 
   useEffect(() => {
     fetchContent();
@@ -60,6 +88,7 @@ const Index = () => {
       ]);
     }
   };
+
   const features = [
     {
       icon: Building2,
@@ -83,65 +112,66 @@ const Index = () => {
     },
   ];
 
-  // stats are now loaded from DB in state above
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 backdrop-blur-xl"
+        style={{ backgroundColor: `hsl(var(--background) / ${navOpacity * 0.9 + 0.1})` }}
+      >
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+          <Link to="/" className="flex items-center gap-2 group">
+            <motion.div
+              className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Building2 className="w-6 h-6 text-primary-foreground" />
-            </div>
+            </motion.div>
             <span className="font-display font-bold text-xl">ConnectHub</span>
           </Link>
           
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">Products</Link>
-            <Link to="/jobs" className="text-muted-foreground hover:text-foreground transition-colors">Jobs</Link>
-            <Link to="/companies" className="text-muted-foreground hover:text-foreground transition-colors">Companies</Link>
+            {['Products', 'Jobs', 'Companies'].map(item => (
+              <Link
+                key={item}
+                to={`/${item.toLowerCase()}`}
+                className="relative text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                {item}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
+              </Link>
+            ))}
           </div>
           
           <div className="flex items-center gap-3">
             {!loading && user ? (
-              <>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 {userRole === 'superadmin' ? (
                   <Button variant="hero" asChild>
-                    <Link to="/admin">
-                      <LayoutDashboard className="w-4 h-4 mr-2" />
-                      Admin Dashboard
-                    </Link>
+                    <Link to="/admin"><LayoutDashboard className="w-4 h-4 mr-2" />Admin Dashboard</Link>
                   </Button>
                 ) : userRole === 'company' ? (
                   <Button variant="hero" asChild>
-                    <Link to="/dashboard">
-                      <LayoutDashboard className="w-4 h-4 mr-2" />
-                      Company Dashboard
-                    </Link>
+                    <Link to="/dashboard"><LayoutDashboard className="w-4 h-4 mr-2" />Company Dashboard</Link>
                   </Button>
                 ) : (
                   <Button variant="hero" asChild>
-                    <Link to="/my-dashboard">
-                      <LayoutDashboard className="w-4 h-4 mr-2" />
-                      My Dashboard
-                    </Link>
+                    <Link to="/my-dashboard"><LayoutDashboard className="w-4 h-4 mr-2" />My Dashboard</Link>
                   </Button>
                 )}
-              </>
+              </motion.div>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                  <Link to="/auth">Sign In</Link>
-                </Button>
-                <Button variant="hero" asChild>
-                  <Link to="/auth?mode=register">Get Started</Link>
-                </Button>
+                <Button variant="ghost" asChild><Link to="/auth">Sign In</Link></Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="hero" asChild><Link to="/auth?mode=register">Get Started</Link></Button>
+                </motion.div>
               </>
             )}
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <section 
@@ -155,8 +185,21 @@ const Index = () => {
         {!content.hero_background_url && (
           <>
             <div className="absolute inset-0 gradient-hero opacity-50" />
-            <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-primary/10 blur-3xl animate-pulse-slow" />
-            <div className="absolute bottom-20 left-10 w-96 h-96 rounded-full bg-accent/10 blur-3xl animate-pulse-slow" />
+            <motion.div
+              className="absolute top-20 right-10 w-72 h-72 rounded-full bg-primary/10 blur-3xl"
+              animate={{ y: [0, -30, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="absolute bottom-20 left-10 w-96 h-96 rounded-full bg-accent/10 blur-3xl"
+              animate={{ y: [0, 20, 0], scale: [1, 0.9, 1] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl"
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+            />
           </>
         )}
         {content.hero_background_url && (
@@ -165,12 +208,22 @@ const Index = () => {
         
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-in">
-              <Star className="w-4 h-4" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+            >
+              <Sparkles className="w-4 h-4" />
               Trusted by thousands of businesses
-            </div>
+            </motion.div>
             
-            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 animate-slide-up">
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+              className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight"
+            >
               {content.hero_title.includes('.') ? (
                 <>
                   {content.hero_title.split('.')[0]}. <span className="text-gradient">{content.hero_title.split('.')[1]?.trim()}.</span> {content.hero_title.split('.').slice(2).join('.')}
@@ -178,35 +231,63 @@ const Index = () => {
               ) : (
                 content.hero_title
               )}
-            </h1>
+            </motion.h1>
             
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+              className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+            >
               {content.hero_subtitle}
-            </p>
+            </motion.p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <Button variant="hero" size="xl" asChild>
-                <Link to="/auth?mode=register">
-                  Start for Free <ArrowRight className="w-5 h-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="xl" asChild>
-                <Link to="/jobs">Browse Jobs</Link>
-              </Button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="hero" size="xl" asChild>
+                  <Link to="/auth?mode=register">
+                    Start for Free <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="outline" size="xl" asChild>
+                  <Link to="/jobs">Browse Jobs</Link>
+                </Button>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 border-y border-border/50">
+      <section className="py-16 border-y border-border/50 bg-card/50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="font-display text-4xl md:text-5xl font-bold text-gradient mb-2">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
+              <motion.div
+                key={index}
+                custom={index}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={fadeUp}
+                className="text-center group"
+              >
+                <motion.div
+                  className="font-display text-4xl md:text-5xl font-bold text-gradient mb-2"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {stat.value}
+                </motion.div>
+                <div className="text-muted-foreground group-hover:text-foreground transition-colors">{stat.label}</div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -215,27 +296,44 @@ const Index = () => {
       {/* Features Section */}
       <section className="py-24 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            custom={0}
+            className="text-center mb-16"
+          >
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
               Everything You Need
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               A complete ecosystem for businesses and professionals to thrive
             </p>
-          </div>
+          </motion.div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                custom={index}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={scaleIn}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-default"
               >
-                <div className="w-14 h-14 rounded-xl gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <motion.div
+                  className="w-14 h-14 rounded-xl gradient-primary flex items-center justify-center mb-4"
+                  whileHover={{ scale: 1.15, rotate: 5 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
                   <feature.icon className="w-7 h-7 text-primary-foreground" />
-                </div>
+                </motion.div>
                 <h3 className="font-display text-xl font-semibold mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground">{feature.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -247,29 +345,70 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-24 px-4">
         <div className="container mx-auto">
-          <div className="relative rounded-3xl gradient-dark overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative rounded-3xl gradient-dark overflow-hidden"
+          >
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30" />
             
+            {/* Animated glow orbs */}
+            <motion.div
+              className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-primary/20 blur-3xl"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 5, repeat: Infinity }}
+            />
+            <motion.div
+              className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-accent/20 blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 7, repeat: Infinity }}
+            />
+
             <div className="relative z-10 px-8 py-16 md:py-24 text-center">
-              <h2 className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-6">
+              <motion.h2
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={0}
+                className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-6"
+              >
                 {content.cta_title}
-              </h2>
-              <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+              </motion.h2>
+              <motion.p
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={1}
+                className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto"
+              >
                 {content.cta_subtitle}
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button variant="accent" size="xl" asChild>
-                  <Link to="/auth?mode=register&type=company">
-                    Register Company <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </Button>
+              </motion.p>
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={2}
+                className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="accent" size="xl" asChild>
+                    <Link to="/auth?mode=register&type=company">
+                      Register Company <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                </motion.div>
                 <div className="flex items-center gap-2 text-primary-foreground/80">
                   <CheckCircle2 className="w-5 h-5" />
                   <span>Free to get started</span>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -277,17 +416,27 @@ const Index = () => {
       <footer className="py-12 border-t border-border">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+            <Link to="/" className="flex items-center gap-2 group">
+              <motion.div
+                className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
                 <Building2 className="w-4 h-4 text-primary-foreground" />
-              </div>
+              </motion.div>
               <span className="font-display font-bold">ConnectHub</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link to="/products" className="hover:text-foreground transition-colors">Products</Link>
-              <Link to="/jobs" className="hover:text-foreground transition-colors">Jobs</Link>
-              <Link to="/companies" className="hover:text-foreground transition-colors">Companies</Link>
-              <Link to="/admin-login" className="hover:text-foreground transition-colors">Admin</Link>
+              {[
+                { to: '/products', label: 'Products' },
+                { to: '/jobs', label: 'Jobs' },
+                { to: '/companies', label: 'Companies' },
+                { to: '/admin-login', label: 'Admin' },
+              ].map(link => (
+                <Link key={link.to} to={link.to} className="relative hover:text-foreground transition-colors group">
+                  {link.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ))}
             </div>
             <p className="text-sm text-muted-foreground">
               © 2024 ConnectHub. All rights reserved.
